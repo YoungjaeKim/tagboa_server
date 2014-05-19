@@ -7,7 +7,9 @@ namespace WebApplication.Models
 {
 	public class Item
 	{
+		private DateTime _timestamp = DateTime.UtcNow;
 		public int ID { get; set; }
+		[Required]
 		public string Title { get; set; }
 		public string Genre { get; set; }
 		public string Author { get; set; }
@@ -18,10 +20,14 @@ namespace WebApplication.Models
 		[Display(Name = "Release Date")]
 		[DataType(DataType.Date)]
 		[DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
-		public DateTime Timestamp { get; set; }
+		public DateTime Timestamp
+		{
+			get { return _timestamp; }
+			set { _timestamp = value; }
+		}
 
-		public List<Tag> Tags { get; set; }
-		public List<UrlLink> Links { get; set; }
+		public virtual List<Tag> Tags { get; set; }
+		public virtual List<UrlLink> Links { get; set; }
 
 	}
 

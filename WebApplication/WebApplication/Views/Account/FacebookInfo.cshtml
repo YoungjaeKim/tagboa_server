@@ -1,0 +1,21 @@
+﻿@model IList<WebApplication.Models.FacebookViewModel>
+@{
+    ViewBag.Title = "FacebookInfo";
+}
+@if (Model.Count > 0)
+{
+    <h3>List of friends</h3>
+    <div class="row">
+        @foreach (var friend in Model)
+        {
+            <div class="col-md-3">
+                <a href="#" class="thumbnail">
+                    <img src=@friend.ImageUrl alt=@friend.Name />
+                </a>
+            </div>
+        }
+    </div>
+}
+
+<h2>FacebookInfo</h2>
+

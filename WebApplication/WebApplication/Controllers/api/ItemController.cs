@@ -6,6 +6,7 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Web.Http;
 using System.Web.Http.Description;
 using WebApplication.Models;
@@ -14,7 +15,7 @@ namespace WebApplication.Controllers.api
 {
     public class ItemController : ApiController
     {
-        private TagBoaDbContext db = new TagBoaDbContext();
+		private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET api/Item
         public IQueryable<Item> GetItems()
@@ -36,6 +37,7 @@ namespace WebApplication.Controllers.api
         }
 
         // PUT api/Item/5
+		[Authorize]
         public IHttpActionResult PutItem(int id, Item item)
         {
             if (!ModelState.IsValid)
@@ -70,6 +72,7 @@ namespace WebApplication.Controllers.api
         }
 
         // POST api/Item
+		[Authorize]
         [ResponseType(typeof(Item))]
         public IHttpActionResult PostItem(Item item)
         {
@@ -78,13 +81,17 @@ namespace WebApplication.Controllers.api
                 return BadRequest(ModelState);
             }
 
-            db.Items.Add(item);
+			if (String.IsNullOrEmpty(item.Author))
+				item.Author = User.Identity.Name;
+			
+			db.Items.Add(item);
             db.SaveChanges();
 
             return CreatedAtRoute("DefaultApi", new { id = item.ID }, item);
         }
 
         // DELETE api/Item/5
+		[Authorize]
         [ResponseType(typeof(Item))]
         public IHttpActionResult DeleteItem(int id)
         {
