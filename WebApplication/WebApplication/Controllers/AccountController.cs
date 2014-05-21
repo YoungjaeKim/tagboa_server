@@ -220,6 +220,95 @@ namespace WebApplication.Controllers
 			}
 		}
 
+		public ActionResult UserRoles(string id)
+		{
+			var db = new ApplicationDbContext();
+			var user = db.Users.First(u => u.UserName == id);
+			var model = new SelectUserRolesViewModel(user);
+			return View(model);
+		}
+
+
+		[HttpPost]
+		[Authorize]
+		[ValidateAntiForgeryToken]
+		public ActionResult UserRoles(SelectUserRolesViewModel model)
+		{
+			if (ModelState.IsValid)
+			{
+				var idManager = new IdentityManager();
+				var Db = new ApplicationDbContext();
+				var user = Db.Users.First(u => u.UserName == model.UserName);
+				idManager.ClearUserRoles(user.Id);
+				foreach (var role in model.Roles)
+				{
+					if (role.Selected)
+					{
+						idManager.AddUserToRole(user.Id, role.RoleName);
+					}
+				}
+				return RedirectToAction("Index");
+			}
+			return View();
+		}
+
+		[Authorize]
+		public ActionResult Edit(string id, ManageMessageId? Message = null)
+		{
+			var db = new ApplicationDbContext();
+			var user = db.Users.First(u => u.UserName == id);
+			var model = new EditUserViewModel(user);
+			ViewBag.MessageId = Message;
+			return View(model);
+		}
+
+		[Authorize]
+		public ActionResult Delete(string id = null)
+		{
+			var db = new ApplicationDbContext();
+			var user = db.Users.First(u => u.UserName == id);
+			var model = new EditUserViewModel(user);
+			if (user == null)
+			{
+				return HttpNotFound();
+			}
+			return View(model);
+		}
+
+
+		[HttpPost, ActionName("Delete")]
+		[ValidateAntiForgeryToken]
+		[Authorize(Roles = "Admin")]
+		public ActionResult DeleteConfirmed(string id)
+		{
+			var Db = new ApplicationDbContext();
+			var user = Db.Users.First(u => u.UserName == id);
+			Db.Users.Remove(user);
+			Db.SaveChanges();
+			return RedirectToAction("Index");
+		}
+
+		[HttpPost]
+		[Authorize(Roles = "Admin")]
+		[ValidateAntiForgeryToken]
+		public async Task<ActionResult> Edit(EditUserViewModel model)
+		{
+			if (ModelState.IsValid)
+			{
+				var Db = new ApplicationDbContext();
+				var user = Db.Users.First(u => u.UserName == model.UserName);
+
+				// Update the user data:
+				user.Email = model.Email;
+				Db.Entry(user).State = System.Data.Entity.EntityState.Modified;
+				await Db.SaveChangesAsync();
+				return RedirectToAction("Index");
+			}
+
+			// If we got this far, something failed, redisplay form
+			return View(model);
+		}
+
 		private async Task StoreFacebookAuthToken(ApplicationUser user)
 		{
 			var claimsIdentity = await AuthenticationManager.GetExternalIdentityAsync(DefaultAuthenticationTypes.ExternalCookie);
@@ -227,10 +316,14 @@ namespace WebApplication.Controllers
 			{
 				// Retrieve the existing claims for the user and add the FacebookAccessTokenClaim
 				var currentClaims = await UserManager.GetClaimsAsync(user.Id);
-				var facebookAccessToken = claimsIdentity.FindAll("FacebookAccessToken").First();
-				if (!currentClaims.Any())
+				var hasFacebook = claimsIdentity.FindAll("FacebookAccessToken");
+				if (hasFacebook != null && hasFacebook.Any())
 				{
-					await UserManager.AddClaimAsync(user.Id, facebookAccessToken);
+					var facebookAccessToken = claimsIdentity.FindAll("FacebookAccessToken").First();
+					if (!currentClaims.Any())
+					{
+						await UserManager.AddClaimAsync(user.Id, facebookAccessToken);
+					}
 				}
 			}
 		}
@@ -346,20 +439,25 @@ namespace WebApplication.Controllers
 		public async Task<ActionResult> FacebookInfo()
 		{
 			var claimsforUser = await UserManager.GetClaimsAsync(User.Identity.GetUserId());
-			var access_token = claimsforUser.FirstOrDefault(x => x.Type == "FacebookAccessToken").Value;
-			var fb = new FacebookClient(access_token);
-			dynamic myInfo = fb.Get("/me/friends");
-			var friendsList = new List<FacebookViewModel>();
-			foreach (dynamic friend in myInfo.data)
+			var isFacebook = claimsforUser.FirstOrDefault(x => x.Type == "FacebookAccessToken");
+			if (isFacebook != null)
 			{
-				friendsList.Add(new FacebookViewModel()
-				   {
-					   Name = friend.name,
-					   ImageUrl = @"https://graph.facebook.com/" + friend.id + "/picture?type=large"
-				   });
-			}
+				var access_token = isFacebook.Value;
+				var fb = new FacebookClient(access_token);
+				dynamic myInfo = fb.Get("/me/friends");
+				var friendsList = new List<FacebookViewModel>();
+				foreach (dynamic friend in myInfo.data)
+				{
+					friendsList.Add(new FacebookViewModel()
+					{
+						Name = friend.name,
+						ImageUrl = @"https://graph.facebook.com/" + friend.id + "/picture?type=large"
+					});
+				}
 
-			return View(friendsList);
+				return View(friendsList);
+			}
+			return View();
 		}
 
 
@@ -449,5 +547,23 @@ namespace WebApplication.Controllers
 			}
 		}
 		#endregion
+
+		[Authorize]
+		public ActionResult Index()
+		{
+			var db = new ApplicationDbContext();
+			var users = db.Users;
+			var model = new List<EditUserViewModel>();
+
+			foreach (var user in users)
+			{
+				var u = new EditUserViewModel(user);
+				model.Add(u);
+			}
+
+			return View(model);
+
+
+		}
 	}
 }

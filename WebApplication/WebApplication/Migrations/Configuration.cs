@@ -1,3 +1,5 @@
+using WebApplication.Models;
+
 namespace WebApplication.Migrations
 {
     using System;
@@ -15,6 +17,8 @@ namespace WebApplication.Migrations
 
         protected override void Seed(WebApplication.Models.ApplicationDbContext context)
         {
+			this.AddUserAndRoles();
+
             //  This method will be called after migrating to the latest version.
 
             //  You can use the DbSet<T>.AddOrUpdate() helper extension method 
@@ -28,5 +32,18 @@ namespace WebApplication.Migrations
             //    );
             //
         }
+
+	    private bool AddUserAndRoles()
+	    {
+			bool success = false;
+			var idManager = new IdentityManager();
+			success = idManager.CreateRole("Admin");
+			if (!success) return false;
+			success = idManager.CreateRole("CanEdit");
+			if (!success) return false;
+			success = idManager.CreateRole("User");
+			if (!success) return false;
+		    return true;
+	    }
     }
 }

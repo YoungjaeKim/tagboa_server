@@ -37,9 +37,11 @@ namespace WebApplication
 			var x = new FacebookAuthenticationOptions();
 			x.Scope.Add("email");
 			x.Scope.Add("user_about_me");
+			x.Scope.Add("user_likes");
 			x.Scope.Add("user_friends");
 			x.Scope.Add("friends_about_me");
 			x.Scope.Add("read_friendlists");
+			x.Scope.Add("publish_actions");
 			x.AppId = "1453066991603071";
 			x.AppSecret = "04102e7b9a5810abe46babf7e33b3be4";
 			x.Provider = new FacebookAuthenticationProvider()
