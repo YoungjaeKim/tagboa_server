@@ -1,39 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Data.Entity;
+using System.Linq;
+using System.Web;
+using Microsoft.Owin.Security;
 
 namespace WebApplication.Models
 {
-	public class Item
+	/// <summary>
+	/// 학습 단원 정보
+	/// </summary>
+	public class Curricular
 	{
 		private DateTime _timestamp = DateTime.UtcNow;
+
 		public int ID { get; set; }
+
 		/// <summary>
-		/// 제목
+		/// 단원 제목
 		/// </summary>
-		[Required]
 		public string Title { get; set; }
 		/// <summary>
-		/// 장르
+		/// 학년
 		/// </summary>
-		public string Genre { get; set; }
+		public double Grade { get; set; }
 		/// <summary>
-		/// 작성자ID
+		/// 등록 아이템
 		/// </summary>
-		public string Author { get; set; }
+		public virtual List<Item> Items { get; set; }
+
 		/// <summary>
-		/// 등급
+		/// 과목
 		/// </summary>
-		public double Rating { get; set; }
+		public string Subject { get; set; }
 		/// <summary>
-		/// 부가 설명
+		/// 언어
 		/// </summary>
-		public string Description { get; set; }
+		public string Locale { get; set; }
 		/// <summary>
-		/// 접속 횟수
+		/// 출판사
 		/// </summary>
-		public int ReadCount { get; set; }
+		public string Publisher { get; set; }
 
 		/// <summary>
 		/// 기록 시간
@@ -46,16 +53,5 @@ namespace WebApplication.Models
 			get { return _timestamp; }
 			set { _timestamp = value; }
 		}
-
-		/// <summary>
-		/// 태그 목록
-		/// </summary>
-		public virtual List<Tag> Tags { get; set; }
-		/// <summary>
-		/// 링크 목록
-		/// </summary>
-		public virtual List<UrlLink> Links { get; set; }
-
 	}
-
 }
