@@ -82,12 +82,12 @@ namespace WebApplication.Models
 		/// <param name="tag">태그</param>
 		public void AddTag(Tag tag)
 		{
-			if(tag == null)
+			if (tag == null)
 				throw new ArgumentNullException("tag");
-			if(tag.Title == null)
+			if (tag.Title == null)
 				throw new ArgumentNullException("tag.Title");
 
-			if(Tags == null)
+			if (Tags == null)
 				Tags = new List<Tag>();
 
 			// 중복 체크.

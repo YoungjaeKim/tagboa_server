@@ -27,6 +27,8 @@ namespace WebApplication.Models
 		/// 간단 소개말
 		/// </summary>
 		public string Note { get; set; }
+
+		public UrlAdapter Adapter { get; set; }
 	}
 
 	public enum UrlLinkStatus
@@ -35,5 +37,13 @@ namespace WebApplication.Models
 		NotFound,
 		Malicious,
 		Reported
+	}
+
+	public enum UrlAdapter
+	{
+		Web,
+		Mp4,
+		EbsVideo,
+		DaumPotPlayer,
 	}
 }

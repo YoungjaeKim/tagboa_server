@@ -9,111 +9,126 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
+using System.Web.Http.Results;
 using WebApplication.Models;
 
 namespace WebApplication.Controllers.api
 {
-    public class TagsController : ApiController
-    {
-        private ApplicationDbContext db = new ApplicationDbContext();
+	public class TagsController : ApiController
+	{
+		private ApplicationDbContext db = new ApplicationDbContext();
 
-        // GET: api/Tags
-        public IQueryable<Tag> GetTags()
-        {
-            return db.Tags;
-        }
+		// GET: api/Tags
+		/// <summary>
+		/// 기능 막아놓음.
+		/// </summary>
+		/// <returns></returns>
+		public InvalidModelStateResult GetTags()
+		{
+			return BadRequest(ModelState);
+			//return db.Tags;
+		}
 
-        // GET: api/Tags/5
-        [ResponseType(typeof(Tag))]
-        public async Task<IHttpActionResult> GetTag(int id)
-        {
-            Tag tag = await db.Tags.FindAsync(id);
-            if (tag == null)
-            {
-                return NotFound();
-            }
+		/// <summary>
+		/// 태그 검색
+		/// </summary>
+		/// <returns></returns>
+		public List<Tag> GetTags(string query)
+		{
+			return db.Tags.Where(t => t.Title.Contains(query)).Take(30).ToList();
+		}
 
-            return Ok(tag);
-        }
+		// GET: api/Tags/5
+		[ResponseType(typeof(Tag))]
+		public async Task<IHttpActionResult> GetTag(int id)
+		{
+			Tag tag = await db.Tags.FindAsync(id);
+			if (tag == null)
+			{
+				return NotFound();
+			}
 
-        // PUT: api/Tags/5
-        [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> PutTag(int id, Tag tag)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+			return Ok(tag);
+		}
 
-            if (id != tag.ID)
-            {
-                return BadRequest();
-            }
+		// PUT: api/Tags/5
+		[ResponseType(typeof(void))]
+		public async Task<IHttpActionResult> PutTag(int id, Tag tag)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
 
-            db.Entry(tag).State = EntityState.Modified;
+			if (id != tag.ID)
+			{
+				return BadRequest();
+			}
 
-            try
-            {
-                await db.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TagExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+			db.Entry(tag).State = EntityState.Modified;
 
-            return StatusCode(HttpStatusCode.NoContent);
-        }
+			try
+			{
+				await db.SaveChangesAsync();
+			}
+			catch (DbUpdateConcurrencyException)
+			{
+				if (!TagExists(id))
+				{
+					return NotFound();
+				}
+				else
+				{
+					throw;
+				}
+			}
 
-        // POST: api/Tags
-        [ResponseType(typeof(Tag))]
-        public async Task<IHttpActionResult> PostTag(Tag tag)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+			return StatusCode(HttpStatusCode.NoContent);
+		}
 
-            db.Tags.Add(tag);
-            await db.SaveChangesAsync();
+		// POST: api/Tags
+		[ResponseType(typeof(Tag))]
+		public async Task<IHttpActionResult> PostTag(Tag tag)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
 
-            return CreatedAtRoute("DefaultApi", new { id = tag.ID }, tag);
-        }
+			db.Tags.Add(tag);
+			await db.SaveChangesAsync();
 
-        // DELETE: api/Tags/5
-        [ResponseType(typeof(Tag))]
-        public async Task<IHttpActionResult> DeleteTag(int id)
-        {
-            Tag tag = await db.Tags.FindAsync(id);
-            if (tag == null)
-            {
-                return NotFound();
-            }
+			return CreatedAtRoute("DefaultApi", new { id = tag.ID }, tag);
+		}
 
-            db.Tags.Remove(tag);
-            await db.SaveChangesAsync();
+		// DELETE: api/Tags/5
+		[ResponseType(typeof(Tag))]
+		public async Task<IHttpActionResult> DeleteTag(int id)
+		{
+			Tag tag = await db.Tags.FindAsync(id);
+			if (tag == null)
+			{
+				return NotFound();
+			}
 
-            return Ok(tag);
-        }
+			db.Tags.Remove(tag);
+			await db.SaveChangesAsync();
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+			return Ok(tag);
+		}
 
-        private bool TagExists(int id)
-        {
-            return db.Tags.Count(e => e.ID == id) > 0;
-        }
-    }
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
+				db.Dispose();
+			}
+			base.Dispose(disposing);
+		}
+
+		private bool TagExists(int id)
+		{
+			return db.Tags.Count(e => e.ID == id) > 0;
+		}
+	}
 }
