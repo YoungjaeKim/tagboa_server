@@ -542,15 +542,10 @@ namespace WebApplication.Controllers.api
 
 		public class FacebookUserViewModel
 		{
-			//[JsonProperty("id")]
 			public string id { get; set; }
-			//[JsonProperty("first_name")]
 			public string first_name { get; set; }
-			//[JsonProperty("last_name")]
 			public string last_name { get; set; }
-			//[JsonProperty("username")]
 			public string username { get; set; }
-			//[JsonProperty("email")]
 			public string email { get; set; }
 		}
 		public class FacebookLoginModel
@@ -561,7 +556,6 @@ namespace WebApplication.Controllers.api
 			public string username { get; set; }
 			//[JsonProperty("last_name")]
 			public string userid { get; set; }
-			public string email { get; set; }
 		}
 
 
