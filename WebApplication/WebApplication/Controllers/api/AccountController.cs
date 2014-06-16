@@ -13,6 +13,8 @@ using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.OAuth;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using WebApplication.Models;
 using WebApplication.Providers;
 using WebApplication.Results;
@@ -375,6 +377,194 @@ namespace WebApplication.Controllers.api
 
 			return Ok();
 		}
+
+		// POST api/Account/FacebookLogin
+		[HttpPost]
+		[AllowAnonymous]
+		[Route("FacebookLogin")]
+		public async Task<IHttpActionResult> FacebookLogin([FromBody] FacebookLoginModel model)
+		{
+			string log = String.Empty;
+			// http://thewayofcode.wordpress.com/2014/03/01/asp-net-webapi-identity-system-how-to-login-with-facebook-access-token/
+
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			if (string.IsNullOrEmpty(model.token))
+			{
+				return BadRequest("No access token");
+			}
+
+			var tokenExpirationTimeSpan = TimeSpan.FromDays(300);
+			ApplicationUser user = null;
+			string username;
+			// Get the fb access token and make a graph call to the /me endpoint
+			var fbUser = await VerifyFacebookAccessToken(model.token);
+			if (fbUser == null)
+			{
+				return BadRequest("Invalid OAuth access token");
+			}
+
+			UserLoginInfo loginInfo = new UserLoginInfo("Facebook", model.userid);
+			user = await UserManager.FindAsync(loginInfo);
+
+			//var loginInfo = await HttpContext.Current.GetOwinContext().Authentication.GetExternalLoginInfoAsync("XsrfId", userid);
+			// If not, register it
+			if (user == null)
+			{
+				if (String.IsNullOrEmpty(model.username))
+					return BadRequest("unregistered user");
+
+				log += "  1";
+				user = new ApplicationUser { UserName = model.username };
+
+				var result = await UserManager.CreateAsync(user);
+				if (result.Succeeded)
+				{
+					result = await UserManager.AddLoginAsync(user.Id, loginInfo);
+					username = model.username;
+					if (!result.Succeeded)
+						return BadRequest("cannot add facebook login");
+					log += "  2";
+				}
+				else
+				{
+					return BadRequest("cannot create user");
+				}
+
+				//var randomPassword = System.Web.Security.Membership.GeneratePassword(10, 5);
+				//user = await RegisterUserAsync(fbUser.Username, randomPassword, fbUser.ID);
+				//var customer = await RegisterCustomerAsync(fbUser.FirstName, fbUser.LastName, fbUser.Email, user);
+			}
+			else
+			{
+				// 이미 있는 유저.
+				username = user.UserName;
+				log += "  3";
+			}
+
+			// 공통 프로세스: 페이스북 클레임 업데이트, 로그인 토큰 생성
+
+			// Check if the user is already registered
+			user = await UserManager.FindByNameAsync(username);
+
+			// 자동 이메일 인증.
+			user.Email = fbUser.email;
+			user.EmailConfirmed = true;
+			await UserManager.UpdateAsync(user);
+
+			// Sign-in the user using the OWIN flow
+			var identity = new ClaimsIdentity(Startup.OAuthBearerOptions.AuthenticationType);
+
+			//identity.AddClaim(new Claim("FacebookAccessToken", model.token));
+			//identity.AddClaim(new Claim(ClaimTypes.Name, user.UserName, null, "Facebook"));
+			//// This is very important as it will be used to populate the current user id 
+			//// that is retrieved with the User.Identity.GetUserId() method inside an API Controller
+			//identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id, null, "LOCAL_AUTHORITY"));
+
+			var claims = await UserManager.GetClaimsAsync(user.Id);
+			var newClaim = new Claim("FacebookAccessToken", model.token);
+			var facebookClaim = claims.FirstOrDefault(c => c.Type.Equals("FacebookAccessToken"));
+			if (facebookClaim == null)
+			{
+				var claimResult = await UserManager.AddClaimAsync(user.Id, newClaim);
+				if (!claimResult.Succeeded)
+					return BadRequest("cannot add claims");
+				log += "  4";
+
+			}
+			else
+			{
+				await UserManager.RemoveClaimAsync(user.Id, facebookClaim);
+				await UserManager.AddClaimAsync(user.Id, newClaim);
+				log += "  5";
+			}
+
+			AuthenticationTicket ticket = new AuthenticationTicket(identity, new AuthenticationProperties());
+			var currentUtc = new Microsoft.Owin.Infrastructure.SystemClock().UtcNow;
+			ticket.Properties.IssuedUtc = currentUtc;
+			ticket.Properties.ExpiresUtc = currentUtc.Add(tokenExpirationTimeSpan);
+			var accesstoken = Startup.OAuthBearerOptions.AccessTokenFormat.Protect(ticket);
+			Request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accesstoken);
+			Authentication.SignIn(identity);
+
+			// Create the response building a JSON object that mimics exactly the one issued by the default /Token endpoint
+			JObject blob = new JObject(
+				new JProperty("userName", user.UserName),
+				new JProperty("access_token", accesstoken),
+				new JProperty("token_type", "bearer"),
+				new JProperty("expires_in", tokenExpirationTimeSpan.TotalSeconds.ToString()),
+				new JProperty(".issued", ticket.Properties.IssuedUtc.ToString()),
+				new JProperty(".expires", ticket.Properties.ExpiresUtc.ToString()),
+				new JProperty("model.token", model.token),
+				new JProperty("log", log)
+			);
+			// Return OK
+			return Ok(blob);
+		}
+
+		//private async Task<ClaimsIdentity> StoreFacebookAuthToken(ApplicationUser user)
+		//{
+		//	var claimsIdentity = await AuthenticationManager.GetExternalIdentityAsync(DefaultAuthenticationTypes.ExternalCookie);
+		//	if (claimsIdentity != null)
+		//	{
+		//		// Retrieve the existing claims for the user and add the FacebookAccessTokenClaim
+		//		var currentClaims = await UserManager.GetClaimsAsync(user.Id);
+		//		var hasFacebook = claimsIdentity.FindAll("FacebookAccessToken");
+		//		if (hasFacebook != null && hasFacebook.Any())
+		//		{
+		//			var facebookAccessToken = claimsIdentity.FindAll("FacebookAccessToken").First();
+		//			if (!currentClaims.Any())
+		//			{
+		//				await UserManager.AddClaimAsync(user.Id, facebookAccessToken);
+		//			}
+		//		}
+		//	}
+		//}
+
+		private async Task<FacebookUserViewModel> VerifyFacebookAccessToken(string accessToken)
+		{
+			FacebookUserViewModel fbUser = null;
+			var path = "https://graph.facebook.com/me?access_token=" + accessToken;
+			var client = new HttpClient();
+			var uri = new Uri(path);
+			var response = await client.GetAsync(uri);
+			if (response.IsSuccessStatusCode)
+			{
+				var content = await response.Content.ReadAsStringAsync();
+				fbUser = Newtonsoft.Json.JsonConvert.DeserializeObject<FacebookUserViewModel>(content);
+			}
+			return fbUser;
+		}
+
+
+		public class FacebookUserViewModel
+		{
+			//[JsonProperty("id")]
+			public string id { get; set; }
+			//[JsonProperty("first_name")]
+			public string first_name { get; set; }
+			//[JsonProperty("last_name")]
+			public string last_name { get; set; }
+			//[JsonProperty("username")]
+			public string username { get; set; }
+			//[JsonProperty("email")]
+			public string email { get; set; }
+		}
+		public class FacebookLoginModel
+		{
+			//[JsonProperty("id")]
+			public string token { get; set; }
+			//[JsonProperty("first_name")]
+			public string username { get; set; }
+			//[JsonProperty("last_name")]
+			public string userid { get; set; }
+			public string email { get; set; }
+		}
+
+
 
 		protected override void Dispose(bool disposing)
 		{

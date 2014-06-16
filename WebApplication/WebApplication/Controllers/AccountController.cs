@@ -8,6 +8,7 @@ using System.Web.Mvc;
 using Facebook;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
+using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using WebApplication.Models;
 
@@ -315,13 +316,13 @@ namespace WebApplication.Controllers
 			if (claimsIdentity != null)
 			{
 				// Retrieve the existing claims for the user and add the FacebookAccessTokenClaim
-				var currentClaims = await UserManager.GetClaimsAsync(user.Id);
 				var hasFacebook = claimsIdentity.FindAll("FacebookAccessToken");
 				if (hasFacebook != null && hasFacebook.Any())
 				{
-					var facebookAccessToken = claimsIdentity.FindAll("FacebookAccessToken").First();
+					var currentClaims = await UserManager.GetClaimsAsync(user.Id);
 					if (!currentClaims.Any())
 					{
+						var facebookAccessToken = claimsIdentity.FindAll("FacebookAccessToken").First();
 						await UserManager.AddClaimAsync(user.Id, facebookAccessToken);
 					}
 				}
@@ -375,7 +376,7 @@ namespace WebApplication.Controllers
 			if (ModelState.IsValid)
 			{
 				// Get the information about the user from the external login provider
-				var info = await AuthenticationManager.GetExternalLoginInfoAsync();
+				ExternalLoginInfo info = await AuthenticationManager.GetExternalLoginInfoAsync();
 				if (info == null)
 				{
 					return View("ExternalLoginFailure");
@@ -460,6 +461,24 @@ namespace WebApplication.Controllers
 			return View();
 		}
 
+		// GET: /Account/ConfirmEmail
+		[AllowAnonymous]
+		public async Task<ActionResult> ConfirmEmail(string Token, string Email)
+		{
+			ApplicationUser user = this.UserManager.FindById(Token);
+			if (user != null)
+			{
+				if (user.Email == Email)
+				{
+					user.EmailConfirmed = true;
+					await UserManager.UpdateAsync(user);
+					await SignInAsync(user, isPersistent: false);
+					return RedirectToAction("Index", "Home", new { ConfirmedEmail = user.Email });
+				}
+				return RedirectToAction("Confirm", "Account", new { Email = user.Email });
+			}
+			return RedirectToAction("Confirm", "Account", new { Email = "" });
+		}
 
 		#region Helpers
 		// Used for XSRF protection when adding external logins

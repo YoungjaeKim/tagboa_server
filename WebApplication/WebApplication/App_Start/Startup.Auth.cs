@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.Owin;
@@ -28,7 +30,25 @@ namespace WebApplication
 				AccessTokenExpireTimeSpan = TimeSpan.FromDays(300),
 				AllowInsecureHttp = true
 			};
+
+
+			// This is a key step of the solution as we need to supply a meaningful and fully working
+			// implementation of the OAuthBearerOptions object when we configure the OAuth Bearer authentication mechanism. 
+			// The trick here is to reuse the previously defined OAuthOptions object that already
+			// implements almost everything we need
+			OAuthBearerOptions = new OAuthBearerAuthenticationOptions();
+			OAuthBearerOptions.AccessTokenFormat = OAuthOptions.AccessTokenFormat;
+			OAuthBearerOptions.AccessTokenProvider = OAuthOptions.AccessTokenProvider;
+			OAuthBearerOptions.AuthenticationMode = OAuthOptions.AuthenticationMode;
+			OAuthBearerOptions.AuthenticationType = OAuthOptions.AuthenticationType;
+			OAuthBearerOptions.Description = OAuthOptions.Description;
+			// The provider is the only object we need to redefine. See below for the implementation
+			OAuthBearerOptions.Provider = new CustomBearerAuthenticationProvider();
+			OAuthBearerOptions.SystemClock = OAuthOptions.SystemClock;
+
 		}
+
+		public static OAuthBearerAuthenticationOptions OAuthBearerOptions { get; private set; }
 
 		public static OAuthAuthorizationServerOptions OAuthOptions { get; private set; }
 
@@ -86,6 +106,26 @@ namespace WebApplication
 			app.UseFacebookAuthentication(x);
 
 			app.UseGoogleAuthentication();
+
+			app.UseOAuthBearerAuthentication(OAuthBearerOptions);
+			// http://thewayofcode.wordpress.com/2014/03/01/asp-net-webapi-identity-system-how-to-login-with-facebook-access-token/
+			//OAuthBearerAuthenticationExtensions.UseOAuthBearerAuthentication(app, OAuthBearerOptions);
+
 		}
+
+
+		public class CustomBearerAuthenticationProvider : OAuthBearerAuthenticationProvider
+		{
+			// This validates the identity based on the issuer of the claim.
+			// The issuer is set in the API endpoint that logs the user in
+			public override Task ValidateIdentity(OAuthValidateIdentityContext context)
+			{
+				var claims = context.Ticket.Identity.Claims;
+				if (!claims.Any() || claims.Any(claim => claim.Type != "FacebookAccessToken"))
+					context.Rejected();
+				return Task.FromResult<object>(null);
+			}
+		}
+
 	}
 }
