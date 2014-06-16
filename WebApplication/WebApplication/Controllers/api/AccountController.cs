@@ -539,7 +539,9 @@ namespace WebApplication.Controllers.api
 			return fbUser;
 		}
 
-
+		/// <summary>
+		/// Facebook 서버와 통신해서 받는 기본 프로필 정보.
+		/// </summary>
 		public class FacebookUserViewModel
 		{
 			public string id { get; set; }
@@ -548,6 +550,10 @@ namespace WebApplication.Controllers.api
 			public string username { get; set; }
 			public string email { get; set; }
 		}
+
+		/// <summary>
+		/// Facebook 로그인할 때 클라이언트로부터 받는 정보.
+		/// </summary>
 		public class FacebookLoginModel
 		{
 			//[JsonProperty("id")]
