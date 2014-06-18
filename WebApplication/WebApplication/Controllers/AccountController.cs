@@ -122,6 +122,7 @@ namespace WebApplication.Controllers
 				user.EmailConfirmed = false;
 				user.Email = model.Email;
 				user.Nickname = model.UserName;
+				user.GenerateTime = DateTime.UtcNow;
 
 				var result = await UserManager.CreateAsync(user, model.Password);
 				if (result.Succeeded)

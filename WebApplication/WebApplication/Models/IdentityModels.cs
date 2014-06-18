@@ -19,7 +19,7 @@ namespace WebApplication.Models
 		[DefaultValue(0)]
 		public int Level { get; set; }
 
-		public DateTime GenerateTime { get; set; }
+		public DateTime? GenerateTime { get; set; }
 	}
 
 

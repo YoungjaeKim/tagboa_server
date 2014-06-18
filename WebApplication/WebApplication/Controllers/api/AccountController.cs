@@ -59,7 +59,7 @@ namespace WebApplication.Controllers.api
 				Nickname = user.Nickname,
 				Level = user.Level,
 				TotalItems = user.TotalItems,
-				GenerateTime = user.GenerateTime.ToBinary()
+				GenerateTime = user.GenerateTime.HasValue ? user.GenerateTime.Value.ToBinary() : 0
 			};
 		}
 
@@ -366,7 +366,8 @@ namespace WebApplication.Controllers.api
 
 			ApplicationUser user = new ApplicationUser
 			{
-				UserName = model.UserName
+				UserName = model.UserName,
+				GenerateTime = DateTime.UtcNow
 			};
 			user.Logins.Add(new IdentityUserLogin
 			{
@@ -424,7 +425,11 @@ namespace WebApplication.Controllers.api
 					return BadRequest("unregistered user");
 
 				log += "  1";
-				user = new ApplicationUser { UserName = model.username };
+				user = new ApplicationUser
+				{
+					UserName = model.username,
+					GenerateTime = DateTime.UtcNow
+				};
 
 				var result = await UserManager.CreateAsync(user);
 				if (result.Succeeded)

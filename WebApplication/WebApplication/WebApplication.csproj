@@ -237,6 +237,10 @@
     <Compile Include="Migrations\201406180755386_AddUserProperties.Designer.cs">
       <DependentUpon>201406180755386_AddUserProperties.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201406180957237_UserGenerateTimeNullable.cs" />
+    <Compile Include="Migrations\201406180957237_UserGenerateTimeNullable.Designer.cs">
+      <DependentUpon>201406180957237_UserGenerateTimeNullable.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -253,9 +257,9 @@
     <Compile Include="Startup.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="App_Data\TagBoaDatabase.mdf" />
-    <Content Include="App_Data\TagBoaDatabase_log.ldf">
-      <DependentUpon>TagBoaDatabase.mdf</DependentUpon>
+    <Content Include="App_Data\aspnet-WebApplication-20140412110623.mdf" />
+    <Content Include="App_Data\aspnet-WebApplication-20140412110623_log.ldf">
+      <DependentUpon>aspnet-WebApplication-20140412110623.mdf</DependentUpon>
     </Content>
     <Content Include="Content\bootstrap-theme.css" />
     <Content Include="Content\bootstrap-theme.min.css" />
@@ -346,6 +350,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201406180755386_AddUserProperties.resx">
       <DependentUpon>201406180755386_AddUserProperties.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201406180957237_UserGenerateTimeNullable.resx">
+      <DependentUpon>201406180957237_UserGenerateTimeNullable.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />
