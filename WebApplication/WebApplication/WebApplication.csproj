@@ -116,6 +116,12 @@
       <Private>True</Private>
       <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="SendGrid.SmtpApi">
+      <HintPath>..\packages\SendGrid.SmtpApi.1.1.3\lib\net40\SendGrid.SmtpApi.dll</HintPath>
+    </Reference>
+    <Reference Include="SendGridMail">
+      <HintPath>..\packages\Sendgrid.3.0.3\lib\net45\SendGridMail.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -227,6 +233,10 @@
     <Compile Include="Migrations\201405190842349_initial.Designer.cs">
       <DependentUpon>201405190842349_initial.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201406180755386_AddUserProperties.cs" />
+    <Compile Include="Migrations\201406180755386_AddUserProperties.Designer.cs">
+      <DependentUpon>201406180755386_AddUserProperties.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -324,6 +334,7 @@
     <Content Include="Views\Items\Details.cshtml" />
     <Content Include="Views\Items\Edit.cshtml" />
     <Content Include="Views\Items\Index.cshtml" />
+    <Content Include="Views\Account\Confirm.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
@@ -332,6 +343,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\201405190842349_initial.resx">
       <DependentUpon>201405190842349_initial.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201406180755386_AddUserProperties.resx">
+      <DependentUpon>201406180755386_AddUserProperties.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />

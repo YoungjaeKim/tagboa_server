@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.UI.WebControls;
 using Facebook;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
+using SendGrid;
 using WebApplication.Models;
 
 namespace WebApplication.Controllers
@@ -63,6 +67,37 @@ namespace WebApplication.Controllers
 			return View(model);
 		}
 
+		/// <summary>
+		/// 인증 메일 보내기.
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		private async Task SendConfirmationEmail(ApplicationUser user)
+		{
+			// Create the email object first, then add the properties.
+			var myMessage = new SendGridMessage();
+
+			// Add the message properties.
+			myMessage.From = new MailAddress("master@bapul.net");
+
+			myMessage.AddTo(user.Email);
+
+			myMessage.Subject = "Email confirmation";
+
+			//Add the HTML and Text bodies
+			var body = String.Format("Dear {0}<BR/>Thank you for your registration, please click on the below link to complete your registration: <a href=\"{1}\"title=\"User Email Confirm\">{1}</a>",
+				user.UserName, Url.Action("ConfirmEmail", "Account", new { Token = user.Id, Email = user.Email }, Request.Url.Scheme));
+
+			myMessage.Html = body;
+
+			var credentials = new NetworkCredential("azure_22cb33e5ca0adfeb5ee17f9a6931e0e9@azure.com", "ecgtlruw");
+			// Create an Web transport for sending email.
+			var transportWeb = new Web(credentials);
+
+			// Send the email.
+			await transportWeb.DeliverAsync(myMessage);
+		}
+
 		//
 		// GET: /Account/Register
 		[AllowAnonymous]
@@ -81,11 +116,21 @@ namespace WebApplication.Controllers
 			if (ModelState.IsValid)
 			{
 				var user = new ApplicationUser() { UserName = model.UserName };
+
+				// 이메일 확인 추가.
+				// http://www.codeproject.com/Tips/738090/ASP-NET-MVC-Confirm-Registration-Email
+				user.EmailConfirmed = false;
+				user.Email = model.Email;
+				user.Nickname = model.UserName;
+
 				var result = await UserManager.CreateAsync(user, model.Password);
 				if (result.Succeeded)
 				{
+					if (!String.IsNullOrEmpty(model.Email))
+						await SendConfirmationEmail(user);
 					await SignInAsync(user, isPersistent: false);
-					return RedirectToAction("Index", "Home");
+					//return RedirectToAction("Index", "Home");
+					return RedirectToAction("Confirm", "Account", new { Email = user.Email });
 				}
 				else
 				{
@@ -95,6 +140,13 @@ namespace WebApplication.Controllers
 
 			// If we got this far, something failed, redisplay form
 			return View(model);
+		}
+
+		[AllowAnonymous]
+		public ActionResult Confirm(string Email)
+		{
+			ViewBag.Email = Email;
+			return View();
 		}
 
 		//

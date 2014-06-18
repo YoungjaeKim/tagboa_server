@@ -40,6 +40,11 @@ namespace WebApplication.Models
 		public int ReadCount { get; set; }
 
 		/// <summary>
+		/// 미리보기 이미지
+		/// </summary>
+		public string Thumbnail { get; set; }
+
+		/// <summary>
 		/// 기록 시간
 		/// </summary>
 		[Display(Name = "Release Date")]

@@ -47,13 +47,19 @@ namespace WebApplication.Controllers.api
 		[Route("UserInfo")]
 		public UserInfoViewModel GetUserInfo()
 		{
-			ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
-
+			ApplicationUser user = UserManager.FindById(User.Identity.GetUserId());
+			ExternalLoginData externalLogin = null;
+			if (User.Identity is ClaimsIdentity)
+				externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
 			return new UserInfoViewModel
 			{
-				UserName = User.Identity.GetUserName(),
+				UserName = user.UserName,
 				HasRegistered = externalLogin == null,
-				LoginProvider = externalLogin != null ? externalLogin.LoginProvider : null
+				LoginProvider = externalLogin != null ? externalLogin.LoginProvider : null,
+				Nickname = user.Nickname,
+				Level = user.Level,
+				TotalItems = user.TotalItems,
+				GenerateTime = user.GenerateTime.ToBinary()
 			};
 		}
 
@@ -397,7 +403,7 @@ namespace WebApplication.Controllers.api
 				return BadRequest("No access token");
 			}
 
-			var tokenExpirationTimeSpan = TimeSpan.FromDays(300);
+			var tokenExpirationTimeSpan = Startup.OAuthOptions.AccessTokenExpireTimeSpan;
 			ApplicationUser user = null;
 			string username;
 			// Get the fb access token and make a graph call to the /me endpoint
@@ -456,7 +462,7 @@ namespace WebApplication.Controllers.api
 			await UserManager.UpdateAsync(user);
 
 			// Sign-in the user using the OWIN flow
-			var identity = new ClaimsIdentity(Startup.OAuthBearerOptions.AuthenticationType);
+			var identity = await UserManager.CreateIdentityAsync(user, Startup.OAuthBearerOptions.AuthenticationType);
 
 			//identity.AddClaim(new Claim("FacebookAccessToken", model.token));
 			//identity.AddClaim(new Claim(ClaimTypes.Name, user.UserName, null, "Facebook"));
@@ -466,8 +472,8 @@ namespace WebApplication.Controllers.api
 
 			var claims = await UserManager.GetClaimsAsync(user.Id);
 			var newClaim = new Claim("FacebookAccessToken", model.token);
-			var facebookClaim = claims.FirstOrDefault(c => c.Type.Equals("FacebookAccessToken"));
-			if (facebookClaim == null)
+			var oldClaim = claims.FirstOrDefault(c => c.Type.Equals("FacebookAccessToken"));
+			if (oldClaim == null)
 			{
 				var claimResult = await UserManager.AddClaimAsync(user.Id, newClaim);
 				if (!claimResult.Succeeded)
@@ -477,15 +483,17 @@ namespace WebApplication.Controllers.api
 			}
 			else
 			{
-				await UserManager.RemoveClaimAsync(user.Id, facebookClaim);
+				await UserManager.RemoveClaimAsync(user.Id, oldClaim);
 				await UserManager.AddClaimAsync(user.Id, newClaim);
 				log += "  5";
 			}
 
-			AuthenticationTicket ticket = new AuthenticationTicket(identity, new AuthenticationProperties());
+			AuthenticationProperties properties = ApplicationOAuthProvider.CreateProperties(user.UserName);
 			var currentUtc = new Microsoft.Owin.Infrastructure.SystemClock().UtcNow;
-			ticket.Properties.IssuedUtc = currentUtc;
-			ticket.Properties.ExpiresUtc = currentUtc.Add(tokenExpirationTimeSpan);
+			properties.IssuedUtc = currentUtc;
+			properties.ExpiresUtc = currentUtc.Add(tokenExpirationTimeSpan);
+			AuthenticationTicket ticket = new AuthenticationTicket(identity, properties);
+
 			var accesstoken = Startup.OAuthBearerOptions.AccessTokenFormat.Protect(ticket);
 			Request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accesstoken);
 			Authentication.SignIn(identity);

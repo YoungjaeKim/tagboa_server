@@ -45,7 +45,6 @@ namespace WebApplication
 			// The provider is the only object we need to redefine. See below for the implementation
 			OAuthBearerOptions.Provider = new CustomBearerAuthenticationProvider();
 			OAuthBearerOptions.SystemClock = OAuthOptions.SystemClock;
-
 		}
 
 		public static OAuthBearerAuthenticationOptions OAuthBearerOptions { get; private set; }

@@ -62,6 +62,11 @@ namespace WebApplication.Models
 		[Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
 		public string ConfirmPassword { get; set; }
 
+		[Required]
+		[EmailAddress]
+		[Display(Name = "E-mail")]
+		public string Email { get; set; }
+
 		// Return a pre-poulated instance of AppliationUser:
 		public ApplicationUser GetUser()
 		{
@@ -192,6 +197,13 @@ namespace WebApplication.Models
 		public bool HasRegistered { get; set; }
 
 		public string LoginProvider { get; set; }
+
+		public string Nickname { get; set; }
+
+		public ApplicationUser User { get; set; }
+		public int Level { get; set; }
+		public int TotalItems { get; set; }
+		public long GenerateTime { get; set; }
 	}
 
 	public class UserLoginInfoViewModel
