@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Web.Security;
 using Microsoft.AspNet.Identity;
@@ -18,8 +19,13 @@ namespace WebApplication.Models
 
 		[DefaultValue(0)]
 		public int Level { get; set; }
-
+		[DataType(DataType.Date)]
+		[DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
 		public DateTime? GenerateTime { get; set; }
+
+		public List<Item> FavoriteItems { get; set; }
+		public List<Curricular> FollowingCurriculum { get; set; }
+		public List<Group> Groups { get; set; } 
 	}
 
 

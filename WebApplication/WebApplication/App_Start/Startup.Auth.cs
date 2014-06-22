@@ -104,7 +104,9 @@ namespace WebApplication
 
 			app.UseFacebookAuthentication(x);
 
-			app.UseGoogleAuthentication();
+			app.UseGoogleAuthentication(
+				clientId: "504247835751-6pubqtuq6sg8kja8an5bd71vcj1lhq23.apps.googleusercontent.com",
+				clientSecret: "OWwne3NdCJe52Z8upu_LI84-");
 
 			app.UseOAuthBearerAuthentication(OAuthBearerOptions);
 			// http://thewayofcode.wordpress.com/2014/03/01/asp-net-webapi-identity-system-how-to-login-with-facebook-access-token/
