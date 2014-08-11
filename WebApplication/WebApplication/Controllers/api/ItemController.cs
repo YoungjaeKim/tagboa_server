@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
 using System.Web.Http;
 using System.Web.Http.Description;
 using WebApplication.Models;
@@ -16,12 +13,7 @@ namespace WebApplication.Controllers.api
 	public class ItemController : ApiController
 	{
 		private ApplicationDbContext db = new ApplicationDbContext();
-
-		// GET api/Item
-		public List<Item> GetItems()
-		{
-			return db.Items.ToList();
-		}
+		private const int ItemCount = 20;
 
 		// GET api/Item/5
 		[ResponseType(typeof(Item))]
@@ -36,13 +28,16 @@ namespace WebApplication.Controllers.api
 			return Ok(item);
 		}
 
-		// GET api/Item/5
+		// GET api/Item
 		[Authorize]
-		public List<Item> GetItem(string username)
+		public IHttpActionResult GetItem(string username, int lastKey = 0)
 		{
-			var item = db.Items.Where(f => f.Author.Equals(username));
+			if (lastKey < 0)
+				return BadRequest();
 
-			return item.ToList();
+			IQueryable<Item> item = db.Items.Where(f => f.Author.Equals(username)).OrderByDescending(o => o.Timestamp).Skip(lastKey).Take(ItemCount);
+
+			return Ok(item.ToList());
 		}
 
 
@@ -59,6 +54,8 @@ namespace WebApplication.Controllers.api
 			{
 				return BadRequest();
 			}
+
+			item.Timestamp = DateTime.UtcNow;
 
 			db.Entry(item).State = EntityState.Modified;
 
@@ -93,6 +90,7 @@ namespace WebApplication.Controllers.api
 
 			if (String.IsNullOrEmpty(item.Author))
 				item.Author = User.Identity.Name;
+			item.Timestamp = DateTime.UtcNow;
 
 			db.Items.Add(item);
 			db.SaveChanges();
